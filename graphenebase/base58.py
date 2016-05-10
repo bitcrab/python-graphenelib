@@ -32,6 +32,7 @@ class Base58(object) :
         * ``"wif"``: prefixed with ``0x00``. Yields a valid wif key
         * ``"bts"``: prefixed with ``BTS``
         * ``"muse"``: prefixed with ``MUSE``
+        * ``"st"``: prefixed with ``STM``
 
     """
     def __init__(self, data, prefix=PREFIX) :

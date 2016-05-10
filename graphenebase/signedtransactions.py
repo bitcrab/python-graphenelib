@@ -2,9 +2,9 @@ import ecdsa
 import hashlib
 from binascii import hexlify, unhexlify
 
-from graphenebase import PrivateKey
-from graphenebase.types import *
-from graphenebase.objects import *
+from .account import PrivateKey, PublicKey
+from .types import *
+from .objects import *
 from .operations import *
 from .chains import *
 
@@ -99,13 +99,7 @@ class Signed_Transaction(GrapheneObject) :
             return None
         return ecdsa.VerifyingKey.from_public_point(Q, curve=ecdsa.SECP256k1)
 
-    def sign(self, wifkeys, chain="BTS") :
-        """ Sign the transaction with the provided private keys.
-
-            :param array wifkeys: Array of wif keys
-            :param str chain: identifier for the chain
-
-        """
+    def deriveDigest(self, chain):
         # Which network are we on :
         if isinstance(chain, str) and chain in known_chains :
             chain_params = known_chains[chain]
@@ -116,10 +110,6 @@ class Signed_Transaction(GrapheneObject) :
         if "chain_id" not in chain_params :
             raise Exception("sign() needs a 'chain_id' in chain params!")
 
-        # Get Unique private keys
-        self.privkeys = []
-        [self.privkeys.append(item) for item in wifkeys if item not in self.privkeys]
-
         # Chain ID
         self.chainid = chain_params["chain_id"]
 
@@ -128,6 +118,36 @@ class Signed_Transaction(GrapheneObject) :
         #   GrapheneObject and the data given in __init__()
         self.message = unhexlify(self.chainid) + bytes(self)
         self.digest = hashlib.sha256(self.message).digest()
+
+    def verify(self, pubkeys, chain="BTS"):
+        self.deriveDigest(chain)
+        signatures = self.data["signatures"].data
+        for signature in signatures:
+            recoverParameter = int(bytes(signature)[0]) - 4 - 27
+            sig = bytes(signature)[1:]
+            p = self.recover_public_key(self.digest, sig, recoverParameter)
+            print(hexlify(p.to_string()).decode('ascii'))
+
+            for pub in pubkeys:
+                print(pub.unCompressed()[2:])
+
+            wif              = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
+            p = bytes(PrivateKey(wif))
+            vk = ecdsa.SigningKey.from_string(p, curve=ecdsa.SECP256k1).get_verifying_key()
+            print(hexlify(vk.to_string()).decode('ascii'))
+
+    def sign(self, wifkeys, chain="BTS") :
+        """ Sign the transaction with the provided private keys.
+
+            :param array wifkeys: Array of wif keys
+            :param str chain: identifier for the chain
+
+        """
+        self.deriveDigest(chain)
+
+        # Get Unique private keys
+        self.privkeys = []
+        [self.privkeys.append(item) for item in wifkeys if item not in self.privkeys]
 
         # Sign the message with every private key given!
         sigs = []

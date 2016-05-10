@@ -7,11 +7,10 @@ import struct
 import time
 
 from .account import PublicKey
-from .chains import known_chains
 from .types import *
-from .signedtransactions import *
+from .signedtransactions import Signed_Transaction
 from .operations import *
-from .objects import *
+from .chains import known_chains
 
 timeformat = '%Y-%m-%dT%H:%M:%S%Z'
 
@@ -38,7 +37,7 @@ def getBlockParams(ws) :
         ``ref_block_prefix``. Requires a websocket connection to a
         witness node!
     """
-    dynBCParams = ws.get_dynamic_global_properties("2.1.0")
+    dynBCParams = ws.get_dynamic_global_properties()
     ref_block_num = dynBCParams["head_block_number"] & 0xFFFF
     ref_block_prefix = struct.unpack_from("<I", unhexlify(dynBCParams["head_block_id"]), 4)[0]
     return ref_block_num, ref_block_prefix
