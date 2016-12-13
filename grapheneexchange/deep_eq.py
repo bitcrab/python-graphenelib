@@ -20,7 +20,7 @@ def deep_eq(_v1, _v2):
     # guard against strings because they are also iterable
     # and will consistently cause a RuntimeError (maximum recursion limit reached)
     if isinstance(_v1, str):
-        return op(c1, c2)
+        return op(c1, str(c2)) #to handle the case that when a number is taken as a string from block
 
     if isinstance(_v1, dict):
         op = _deep_dict_eq
